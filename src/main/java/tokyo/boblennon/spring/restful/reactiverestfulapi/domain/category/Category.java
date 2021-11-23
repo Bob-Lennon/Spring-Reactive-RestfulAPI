@@ -16,6 +16,7 @@ public @Getter @Setter @NoArgsConstructor class Category {
     @NotEmpty
     private String id;
 
+    @NotEmpty
     private String name;
 
     public Category(String name) {

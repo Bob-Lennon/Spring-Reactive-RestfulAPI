@@ -31,6 +31,7 @@ public @Getter @Setter @NoArgsConstructor class Product {
     private Date createdAt;
 
     @Valid
+    @NotNull
     private Category category;
 
     private String picture;
