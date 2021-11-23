@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +42,13 @@ public class ProductController {
         return this.productRepositoryImp.add(product)
                 .map(p -> ResponseEntity.created(URI.create("/api/products/" + p.getId()))
                 .body(p));
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE, path = "/{id}")
+    public Mono<ResponseEntity<Product>> get(@PathVariable String id) {
+        return this.productRepositoryImp.findById(id)
+                .map(p -> ResponseEntity.ok(p))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
 }
