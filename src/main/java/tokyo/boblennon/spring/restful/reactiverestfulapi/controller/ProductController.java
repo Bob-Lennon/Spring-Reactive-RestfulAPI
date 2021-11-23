@@ -3,7 +3,11 @@ package tokyo.boblennon.spring.restful.reactiverestfulapi.controller;
 import java.io.File;
 import java.net.URI;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.support.WebExchangeBindException;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,12 +52,33 @@ public class ProductController {
     }
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<Product>> add(@RequestBody Product product){
-        if(product.getCreatedAt() == null)
+    public Mono<ResponseEntity<Map<String, Object>>> add(@Valid @RequestBody Mono<Product> monoProduct){
+        Map<String, Object> response = new HashMap<>();
+
+        return monoProduct.flatMap(product -> {
+            if(product.getCreatedAt() == null)
             product.setCreatedAt(new Date());
-        return this.productRepositoryImp.add(product)
-                .map(p -> ResponseEntity.created(URI.create("/api/products/" + p.getId()))
-                .body(p));
+
+            return this.productRepositoryImp.add(product)
+                .map(p -> {
+                    response.put("product", p);
+                    return ResponseEntity.created(URI.create("/api/products/" + p.getId()))
+                            .body(response);
+
+                });
+        })
+        .onErrorResume(t -> {
+            return Mono.just(t).cast(WebExchangeBindException.class)
+                    .flatMap(ex -> Mono.just(ex.getFieldErrors()))
+                    .flatMapMany(Flux::fromIterable)
+                    .map(field -> "The field " + field.getField() + " " + field.getDefaultMessage())
+                    .collectList()
+                    .flatMap(list -> {
+                        response.put("errors", list);
+                        return Mono.just(ResponseEntity.badRequest().body(response));
+                    });
+        });
+        
     }
 
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
