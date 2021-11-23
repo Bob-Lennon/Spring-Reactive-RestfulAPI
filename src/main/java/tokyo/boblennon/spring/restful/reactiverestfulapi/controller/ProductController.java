@@ -1,12 +1,16 @@
 package tokyo.boblennon.spring.restful.reactiverestfulapi.controller;
 
+import java.io.File;
 import java.net.URI;
 import java.util.Date;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
@@ -24,6 +29,9 @@ import tokyo.boblennon.spring.restful.reactiverestfulapi.infrastructure.product.
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
+    @Value("${config.upload.path}")
+    private String path;
 
     private final ProductRepositoryImp productRepositoryImp;
 
@@ -73,5 +81,17 @@ public class ProductController {
                     .then(Mono.just(new ResponseEntity<Void>(HttpStatus.NO_CONTENT)));
         })
         .defaultIfEmpty(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
+    }
+
+    @PostMapping("/upload/{id}")
+    public Mono<ResponseEntity<Product>> upload(@PathVariable String id, @RequestPart FilePart file){
+        return this.productRepositoryImp.findById(id).flatMap(p -> {
+            p.setPicture(UUID.randomUUID().toString() + file.filename()
+            .replace(" ", "-"));
+            return file.transferTo(new File(path + p.getPicture()))
+                    .then(this.productRepositoryImp.add(p));
+        })
+        .map(p -> ResponseEntity.ok(p))
+        .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 }
