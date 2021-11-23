@@ -5,9 +5,9 @@ import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.categories.Category;
-import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.categories.CategoryReadRepository;
-import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.categories.CategoryWriteRepository;
+import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category.Category;
+import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category.CategoryReadRepository;
+import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category.CategoryWriteRepository;
 
 @Service
 public class CategoryRepositoryImp implements CategoryReadRepository, CategoryWriteRepository {

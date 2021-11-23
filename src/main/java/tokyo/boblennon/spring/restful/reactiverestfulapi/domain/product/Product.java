@@ -13,7 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.categories.Category;
+import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category.Category;
 
 @Document(collection = "products")
 public @Getter @Setter @NoArgsConstructor class Product {

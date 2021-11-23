@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 
 import reactor.core.publisher.Flux;
-import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.categories.Category;
+import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category.Category;
 import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.product.Product;
 import tokyo.boblennon.spring.restful.reactiverestfulapi.infrastructure.category.CategoryRepositoryImp;
 import tokyo.boblennon.spring.restful.reactiverestfulapi.infrastructure.product.ProductRepositoryImp;

@@ -1,4 +1,4 @@
-package tokyo.boblennon.spring.restful.reactiverestfulapi.domain.categories;
+package tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category;
 
 import reactor.core.publisher.Mono;
 
