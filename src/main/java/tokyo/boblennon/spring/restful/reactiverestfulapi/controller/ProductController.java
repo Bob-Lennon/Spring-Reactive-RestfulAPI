@@ -1,9 +1,14 @@
 package tokyo.boblennon.spring.restful.reactiverestfulapi.controller;
 
+import java.net.URI;
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,9 +29,18 @@ public class ProductController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<Flux<Product>>> list() {
+    public Mono<ResponseEntity<Flux<Product>>> getAll() {
         return Mono.just(ResponseEntity.ok().body(this.productRepositoryImp
                 .getAll()));
+    }
+
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<Product>> add(@RequestBody Product product){
+        if(product.getCreatedAt() == null)
+            product.setCreatedAt(new Date());
+        return this.productRepositoryImp.add(product)
+                .map(p -> ResponseEntity.created(URI.create("/api/products/" + p.getId()))
+                .body(p));
     }
 
 }
