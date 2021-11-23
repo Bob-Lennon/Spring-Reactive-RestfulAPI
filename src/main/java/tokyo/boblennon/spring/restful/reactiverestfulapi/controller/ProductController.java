@@ -55,14 +55,14 @@ public class ProductController {
                 .body(p));
     }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE, path = "/{id}")
+    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<Product>> get(@PathVariable String id) {
         return this.productRepositoryImp.findById(id)
                 .map(p -> ResponseEntity.ok(p))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PutMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE, path = "/{id}")
+    @PutMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<Product>> update(@RequestBody Product product,@PathVariable String id){
         return this.productRepositoryImp.findById(id).flatMap(p -> {
             p.setName(product.getName());
@@ -79,7 +79,7 @@ public class ProductController {
         return this.productRepositoryImp.findById(id).flatMap(p -> {
             return this.productRepositoryImp.delete(p)
                     .then(Mono.just(new ResponseEntity<Void>(HttpStatus.NO_CONTENT)));
-        })
+        }) 
         .defaultIfEmpty(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
     }
 
@@ -93,5 +93,19 @@ public class ProductController {
         })
         .map(p -> ResponseEntity.ok(p))
         .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    //? We are sending the data as ContentType::Form-Data instead of JSON
+    @PostMapping(path = "/new", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<Product>> addWithPicture(Product product, @RequestPart FilePart file){
+        if(product.getCreatedAt() == null)
+            product.setCreatedAt(new Date());
+        product.setPicture(UUID.randomUUID().toString() + file.filename()
+        .replace(" ", "-"));
+        
+        return file.transferTo(new File(path + product.getPicture()))
+                .then(this.productRepositoryImp.add(product))
+                .map(p -> ResponseEntity.created(URI.create("/api/products/" + p.getId()))
+                .body(p));
     }
 }
