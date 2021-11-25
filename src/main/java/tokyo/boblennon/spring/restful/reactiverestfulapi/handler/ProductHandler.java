@@ -12,9 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.codec.multipart.FormFieldPart;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.category.Category;
 import tokyo.boblennon.spring.restful.reactiverestfulapi.domain.product.Product;
@@ -26,11 +30,13 @@ public class ProductHandler {
     @Value("${config.upload.path}")
     private String path;
 
+    private final Validator validator;
     private final ProductRepositoryImp productRepositoryImp;
 
     @Autowired
-    public ProductHandler(final ProductRepositoryImp productRepositoryImp){
+    public ProductHandler(final ProductRepositoryImp productRepositoryImp, final Validator validator){
         this.productRepositoryImp = productRepositoryImp;
+        this.validator = validator;
     }
 
     public Mono<ServerResponse> getAll(ServerRequest request){
@@ -53,16 +59,27 @@ public class ProductHandler {
     public Mono<ServerResponse>  add(ServerRequest request){
         Mono<Product> product = request.bodyToMono(Product.class);
 
-        return product.flatMap((p -> {
-            if(p.getCreatedAt() == null)
-                p.setCreatedAt(new Date());
-            return this.productRepositoryImp.add(p);
-        }))
-        .flatMap(p -> ServerResponse.created(URI
-                    .create("/api/v2/product/" + p.getId()))
-                    .contentType(APPLICATION_JSON)
-                    .bodyValue(p)
-        );
+        return product.flatMap(p -> {
+            //? Validation since with Functional Handlers we do not have available the
+            //? annotation @Valid
+            Errors errors = new BeanPropertyBindingResult(p, Product.class.getName());
+            validator.validate(p, errors);
+
+            if(errors.hasErrors()){
+                return Flux.fromIterable(errors.getFieldErrors())
+                        .map(error -> "Field " + error.getField() + " " + error.getDefaultMessage())
+                        .collectList()
+                        .flatMap(list -> ServerResponse.badRequest().bodyValue(list));
+            }else{
+                if(p.getCreatedAt() == null)
+                    p.setCreatedAt(new Date());
+                return this.productRepositoryImp.add(p)
+                    .flatMap(pDB-> ServerResponse.created(URI
+                            .create("/api/v2/product/" + pDB.getId()))
+                            .contentType(APPLICATION_JSON)
+                            .bodyValue(pDB));
+            }
+        });
     }
 
     public Mono<ServerResponse> update(ServerRequest request){
